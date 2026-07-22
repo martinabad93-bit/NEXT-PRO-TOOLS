@@ -259,10 +259,10 @@
         </div>
 
         <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: var(--radius-input); border: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <div><span style="font-size: 9px; font-weight: 700; color: var(--text-muted); display: block; text-transform: uppercase; margin-bottom: 2px;">Base de Datos CSV</span><span id="db-status" style="font-size: 12px; font-weight: 800; color: var(--danger);">🔴 Sin archivo</span></div>
-            <button class="btn-action" style="width: auto; padding: 8px 16px; font-size: 10px; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);" onclick="document.getElementById('csv-file-input').click()">Actualizar Excel</button>
-            <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(this)">
+            <div><span style="font-size: 9px; font-weight: 700; color: var(--text-muted); display: block; text-transform: uppercase; margin-bottom: 2px;">Base de Datos (GitHub)</span><span id="db-status" style="font-size: 12px; font-weight: 800; color: var(--text-muted);">⏳ Cargando...</span></div>
+            <button class="btn-action" style="width: auto; padding: 8px 16px; font-size: 10px; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);" onclick="cargarCSVDesdeGitHub()">🔄 Sincronizar</button>
         </div>
+        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;">
             <button class="btn-action" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="imprimirPDF()">🖨️ Imprimir Hoja</button>
             <button class="btn-action btn-wa" style="box-shadow: 0 0 15px rgba(37, 211, 102, 0.2);" onclick="enviarWhatsApp()">📲 Enviar Cliente</button>
@@ -619,7 +619,45 @@
     // CSV LOGIC
     function decodificarEspecificaciones(t) { const d = {}; if(t) t.split('||').forEach(p => { p = p.trim(); if (p !== '') { const s = p.indexOf(':'); if(s !== -1) d[p.substring(0, s).trim().toUpperCase()] = p.substring(s + 1).trim(); } }); return d; }
     function parseCSVLine(t, d) { let p = []; let q = false; let c = ''; for (let i = 0; i < t.length; i++) { let char = t[i]; if (char === '"') q = !q; else if (char === d && !q) { p.push(c.trim()); c = ''; } else c += char; } p.push(c.trim()); return p; }
-    function handleFileSelect(inp) { if(!inp.files[0]) return; const r = new FileReader(); r.onload = function(e) { localStorage.setItem('nextgb_csv_data', e.target.result); processCSV(e.target.result); showToast("Base de datos actualizada", "📁");}; r.readAsText(inp.files[0], 'UTF-8'); }
+
+    // ==========================================
+    // CONEXIÓN DIRECTA A GITHUB
+    // ==========================================
+    // ⚠️ IMPORTANTE: Reemplaza esta URL con el enlace "Raw" de tu archivo CSV en GitHub
+    const urlGitHubCSV = 'https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/base_datos.csv';
+
+    async function cargarCSVDesdeGitHub() {
+        const st = document.getElementById('db-status');
+        st.innerHTML = '⏳ Conectando...';
+        st.style.color = 'var(--text-muted)';
+        
+        try {
+            // El '?t=' + timestamp evita que el navegador guarde el CSV viejo en caché
+            const response = await fetch(urlGitHubCSV + '?t=' + new Date().getTime());
+            if (!response.ok) throw new Error('Fallo al leer archivo de GitHub');
+            
+            const text = await response.text();
+            
+            // Guardamos el texto en localStorage como respaldo (modo offline)
+            localStorage.setItem('nextgb_csv_data', text); 
+            
+            processCSV(text);
+            showToast("Base de datos sincronizada", "☁️");
+            
+        } catch (error) {
+            console.error(error);
+            // Si falla el internet, intentamos usar el último archivo guardado
+            const sCSV = localStorage.getItem('nextgb_csv_data');
+            if (sCSV) {
+                processCSV(sCSV);
+                showToast("Sin conexión. Usando respaldo local.", "⚠️");
+                st.innerHTML += ' (Modo Offline)';
+            } else {
+                st.innerHTML = `❌ Error de conexión`;
+                st.style.color = 'var(--danger)';
+            }
+        }
+    }
 
     function processCSV(text) {
         const lines = text.split(/\r?\n/); if (lines.length < 2) return;
@@ -758,8 +796,10 @@
 
     window.onload = function() {
         setAuctionPlatform('iaai');
-        const sCSV = localStorage.getItem('nextgb_csv_data');
-        if (sCSV) { processCSV(sCSV); } else { processCSV(`Marca,Modelo,Año,País,Tracción,Valor,Especificaciones\nHonda,CR-V,2024,USA,AWD,28500,SERIE: TOURING`); document.getElementById('db-status').innerHTML = `⚠️ Usa tu CSV`; }
+        
+        // Dispara la descarga desde GitHub automáticamente al cargar la web
+        cargarCSVDesdeGitHub(); 
+        
         fetchTasaDolar(); 
         actualizarSelectCotizaciones();
         openTab('tab-subastas'); 
