@@ -42,8 +42,8 @@
         .btn-reset:hover { background: #ef4444; color: #ffffff; transform: translateY(-2px); }
 
         /* NAVEGACIÓN Y TABS */
-        .tabs-nav { grid-column: 1 / -1; display: flex; background: var(--input-bg); padding: 6px; border-radius: 12px; gap: 6px; margin-bottom: 10px; border: 1px solid var(--border-color); }
-        .tab-btn { background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 13px; padding: 12px 16px; cursor: pointer; border-radius: 8px; transition: background-color 0.3s, color 0.3s; text-transform: uppercase; letter-spacing: 0.5px; flex: 1; text-align: center; }
+        .tabs-nav { grid-column: 1 / -1; display: flex; background: var(--input-bg); padding: 6px; border-radius: 12px; gap: 6px; margin-bottom: 10px; border: 1px solid var(--border-color); overflow-x: auto;}
+        .tab-btn { background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 13px; padding: 12px 16px; cursor: pointer; border-radius: 8px; transition: background-color 0.3s, color 0.3s; text-transform: uppercase; letter-spacing: 0.5px; flex: 1; text-align: center; white-space: nowrap;}
         .tab-btn:hover { color: var(--text-main); }
         .tab-btn.active { background: var(--accent); color: #ffffff; box-shadow: var(--shadow-glow); font-weight: 700; }
         
@@ -134,7 +134,7 @@
             }
 
             .no-print, .theme-switch, .tabs-nav, .top-bar, #toast-container, .btn-action { display: none !important; }
-            #tab-subastas, #tab-aduanas, #tab-costos { display: none !important; }
+            #tab-subastas, #tab-aduanas, #tab-costos, #tab-prestamos { display: none !important; }
             
             .card:last-child {
                 display: block !important; border: none !important; box-shadow: none !important; 
@@ -199,9 +199,11 @@
     <div class="tabs-nav no-print">
         <button class="tab-btn active" onclick="openTab('tab-subastas')">1. Fees Subasta</button>
         <button class="tab-btn" onclick="openTab('tab-aduanas')">2. Aduanas y Placa</button>
-        <button class="tab-btn" onclick="openTab('tab-costos')">3. Inversión Total</button>
+        <button class="tab-btn" onclick="openTab('tab-costos')">3. Inversión</button>
+        <button class="tab-btn" onclick="openTab('tab-prestamos')">4. Préstamos</button>
     </div>
 
+    <!-- PESTAÑA 1: SUBASTAS -->
     <div id="tab-subastas" class="card no-print tab-content active">
         <h1>Simulador Fees de Subasta</h1>
         <div style="display: flex; gap: 12px; margin-bottom: 20px;">
@@ -225,6 +227,7 @@
         </div>
     </div>
 
+    <!-- PESTAÑA 2: ADUANAS -->
     <div id="tab-aduanas" class="card no-print tab-content">
         <h1>Entrada de Inventario y DGA</h1>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -269,6 +272,7 @@
         </div>
     </div>
 
+    <!-- PESTAÑA 3: COSTOS E INVERSIÓN -->
     <div id="tab-costos" class="card no-print tab-content">
         <h1>Inversión y Rentabilidad</h1>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -310,6 +314,64 @@
         </div>
     </div>
 
+    <!-- PESTAÑA 4: PRÉSTAMOS (NUEVA) -->
+    <div id="tab-prestamos" class="card no-print tab-content">
+        <h1>Simulador de Préstamos</h1>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="input-group">
+                <label>Precio del Vehículo (DOP o USD)</label>
+                <input type="number" id="p_precio" placeholder="Ej. 1000000" oninput="calcularPrestamo()" class="reset-target">
+            </div>
+            <div class="input-group">
+                <label>Avance / Inicial</label>
+                <input type="number" id="p_inicial" placeholder="Ej. 200000" oninput="calcularPrestamo()" class="reset-target">
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="input-group">
+                <label>Banco (Ref. Usados)</label>
+                <select id="p_banco" onchange="actualizarTasa()">
+                    <option value="15.95">Motor Crédito (15.95%)</option>
+                    <option value="14.95">Banco Caribe (14.95%)</option>
+                    <option value="15.20">Banreservas (15.20%)</option>
+                    <option value="16.00">Banco BACC (16.00% est.)</option>
+                    <option value="custom">Tasa Personalizada...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Tasa de Interés Anual (%)</label>
+                <input type="number" id="p_tasa" value="15.95" step="0.01" oninput="calcularPrestamo()">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Plazo (Meses)</label>
+            <select id="p_plazo" onchange="calcularPrestamo()">
+                <option value="12">12 Meses (1 Año)</option>
+                <option value="24">24 Meses (2 Años)</option>
+                <option value="36">36 Meses (3 Años)</option>
+                <option value="48">48 Meses (4 Años)</option>
+                <option value="60" selected>60 Meses (5 Años)</option>
+                <option value="72">72 Meses (6 Años)</option>
+            </select>
+        </div>
+        
+        <!-- BOTONES AÑADIDOS: PDF, WHATSAPP Y CALCULAR -->
+        <button class="btn-action" style="background: var(--input-bg); color: var(--text-main); border: 1px dashed var(--border-color); margin-top: 15px; margin-bottom: 20px;" onclick="sincronizarPrecioDesdeInversion()">📥 Traer Precio desde Inversión (RD$)</button>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+            <button class="btn-action" style="background: var(--accent); color: white; box-shadow: var(--shadow-glow);" onclick="calcularPrestamo()">Calcular Cuota</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+            <button class="btn-action" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="imprimirPDF()">🖨️ Imprimir Simulación</button>
+            <button class="btn-action btn-wa" style="box-shadow: 0 0 15px rgba(37, 211, 102, 0.2);" onclick="enviarWhatsAppPrestamo()">📲 Enviar Cliente</button>
+        </div>
+    </div>
+
+
+    <!-- PANEL DERECHO: WIDGETS DE RESULTADOS -->
     <div class="card" style="position: sticky; top: 20px; height: fit-content;">
         
         <div class="logo-container">
@@ -334,6 +396,7 @@
             <div class="info-item"><span>Tasa DOP</span><strong id="lblTasaGlobal" style="color: var(--primary);">60.60</strong></div>
         </div>
 
+        <!-- RES: SUBASTAS -->
         <div id="res-subastas" class="tab-content active">
             <h1 id="lblAuctionTitle">Desglose Fees Subasta</h1>
             <div class="res-line"><span>Bid Ofertado</span><span id="ra_bid">US$ 0.00</span></div>
@@ -341,6 +404,7 @@
             <div class="total-box"><small>🔨 Costo Total Subasta (FOB)</small><h2 id="ra_total">US$ 0.00</h2></div>
         </div>
 
+        <!-- RES: ADUANAS -->
         <div id="res-aduanas" class="tab-content">
             <h1>Liquidación Oficial DGA</h1>
             <div class="res-line"><span>Arancel (<span id="lblPorcentajeGravamen">10</span>%)</span><span id="rArancel">0.00</span></div>
@@ -358,6 +422,7 @@
             <div class="total-box"><small>🏁 Gran Total DGA Estimado</small><h2 id="rTotal">0.00</h2></div>
         </div>
 
+        <!-- RES: COSTOS -->
         <div id="res-costos" class="tab-content">
             <h1>Inversión y Rentabilidad</h1>
             <div class="res-line"><span>Subasta y Fees (Origen)</span><span id="rc_subasta_usd">US$ 0.00</span></div>
@@ -383,6 +448,31 @@
                 <div style="font-size: 14px; margin-top: 6px; font-weight: 600; opacity: 0.9;" id="rc_margen_neto_rds">RD$ 0.00</div>
             </div>
         </div>
+
+        <!-- RES: PRÉSTAMOS (NUEVO) -->
+        <div id="res-prestamos" class="tab-content">
+            <h1>Simulación de Préstamo</h1>
+            <div class="res-line"><span>Valor del Vehículo</span><span id="rp_vehiculo">0.00</span></div>
+            <div class="res-line"><span>Avance / Inicial</span><span id="rp_inicial" style="color: var(--danger);">- 0.00</span></div>
+            <div class="res-line subtotal-line" style="margin-bottom: 15px;"><span>Monto a Financiar</span><span id="rp_monto">0.00</span></div>
+            
+            <div class="res-line highlight-subtotal" style="background: rgba(37, 99, 235, 0.05); padding: 10px;">
+                <span>Tasa de Interés Anual</span><span id="rp_tasa" style="color: var(--primary);">15.95%</span>
+            </div>
+            <div class="res-line"><span>Plazo Estimado</span><span id="rp_plazo">60 Meses</span></div>
+            
+            <div class="total-box" style="margin-top: 25px; background: linear-gradient(135deg, #0f172a, var(--bg-card)); border: 1px solid var(--accent);">
+                <small style="color: var(--accent);">💳 Cuota Mensual Fija</small>
+                <h2 id="rp_cuota" style="color: #ffffff;">0.00</h2>
+                <div style="font-size: 10px; margin-top: 10px; opacity: 0.7; color: var(--text-muted);">*No incluye seguro full ni gastos de cierre legales del banco.</div>
+            </div>
+
+            <!-- DISCLAIMER AÑADIDO PARA LA IMPRESIÓN Y VISTA -->
+            <div style="margin-top: 15px; font-size: 10px; color: var(--text-muted); text-align: justify; line-height: 1.4; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color);">
+                <strong>⚠️ Nota Importante:</strong> Esta simulación es referencial. Las cuotas, tasas de interés y condiciones finales están sujetas a la evaluación crediticia y aprobación definitiva por parte de la entidad financiera.
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -461,6 +551,7 @@
         updateModels(); updateYears(); updateVersions(); 
         calc(); 
         calcCostos();
+        calcularPrestamo();
         showToast(`Cotización "${val}" Cargada`, '📂');
     }
 
@@ -474,28 +565,33 @@
         const mSel = document.getElementById('marca'); Object.keys(db).sort().forEach(m => mSel.options.add(new Option(m, m)));
         document.getElementById('tratado').value = "0.10"; document.getElementById('select-cotizaciones').value = "";
         window.currentAuctionBid = 0; window.currentAuctionFees = 0; window.currentTotal = 0; window.currentVehiculo = "POR ESPECIFICAR"; window.currentCliente = "";
-        calcAuctionFees(); calc(); calcCostos(); openTab('tab-subastas'); window.scrollTo({ top: 0, behavior: 'smooth' }); showToast('Pantalla limpia.', '🧹');
+        calcAuctionFees(); calc(); calcCostos(); calcularPrestamo(); openTab('tab-subastas'); window.scrollTo({ top: 0, behavior: 'smooth' }); showToast('Pantalla limpia.', '🧹');
     }
 
+    // ==========================================
+    // SISTEMA DE PESTAÑAS (TABS)
+    // ==========================================
     function openTab(tabId) {
         document.querySelectorAll('.app-container > .tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('#res-aduanas, #res-costos, #res-subastas').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('#res-aduanas, #res-costos, #res-subastas, #res-prestamos').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         
         document.getElementById(tabId).classList.add('active');
-        const btnIndex = tabId === 'tab-subastas' ? 0 : (tabId === 'tab-aduanas' ? 1 : 2);
-        document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
         
-        if (tabId === 'tab-costos') { 
-            document.getElementById('res-costos').classList.add('active'); 
-        } 
-        else if (tabId === 'tab-subastas') { 
-            document.getElementById('res-subastas').classList.add('active'); 
-            calcAuctionFees(); 
-        } 
-        else if(tabId === 'tab-aduanas') { 
-            document.getElementById('res-aduanas').classList.add('active'); 
+        const tabMap = { 'tab-subastas': 0, 'tab-aduanas': 1, 'tab-costos': 2, 'tab-prestamos': 3 };
+        const btnIndex = tabMap[tabId];
+        if (btnIndex !== undefined) {
+            document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
         }
+        
+        const resId = tabId.replace('tab-', 'res-');
+        const resEl = document.getElementById(resId);
+        if(resEl) resEl.classList.add('active');
+
+        if (tabId === 'tab-subastas') calcAuctionFees();
+        if (tabId === 'tab-aduanas') calc();
+        if (tabId === 'tab-costos') calcCostos();
+        if (tabId === 'tab-prestamos') calcularPrestamo();
     }
 
     async function fetchTasaDolar() {
@@ -623,7 +719,6 @@
     // ==========================================
     // CONEXIÓN DIRECTA A GITHUB
     // ==========================================
-    // ⚠️ IMPORTANTE: Reemplaza esta URL con el enlace "Raw" de tu archivo CSV en GitHub
     const urlGitHubCSV = 'https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/base_datos.csv';
 
     async function cargarCSVDesdeGitHub() {
@@ -632,21 +727,16 @@
         st.style.color = 'var(--text-muted)';
         
         try {
-            // El '?t=' + timestamp evita que el navegador guarde el CSV viejo en caché
             const response = await fetch(urlGitHubCSV + '?t=' + new Date().getTime());
             if (!response.ok) throw new Error('Fallo al leer archivo de GitHub');
             
             const text = await response.text();
-            
-            // Guardamos el texto en localStorage como respaldo (modo offline)
             localStorage.setItem('nextgb_csv_data', text); 
-            
             processCSV(text);
             showToast("Base de datos sincronizada", "☁️");
             
         } catch (error) {
             console.error(error);
-            // Si falla el internet, intentamos usar el último archivo guardado
             const sCSV = localStorage.getItem('nextgb_csv_data');
             if (sCSV) {
                 processCSV(sCSV);
@@ -728,7 +818,67 @@
         document.getElementById('rSubPlaca').innerText = fmt(subPla); document.getElementById('rTotal').innerText = fmt(window.currentTotal);
     }
 
-    // WHATSAPP AL CLIENTE (DGA)
+    // ==========================================
+    // LÓGICA DE LA CALCULADORA DE PRÉSTAMOS
+    // ==========================================
+    function actualizarTasa() {
+        const banco = document.getElementById('p_banco').value;
+        const inputTasa = document.getElementById('p_tasa');
+        if (banco === 'custom') {
+            inputTasa.value = '';
+            inputTasa.focus();
+        } else {
+            inputTasa.value = banco;
+        }
+        calcularPrestamo();
+    }
+
+    function sincronizarPrecioDesdeInversion() {
+        // Traemos el precio de venta en USD de la pestaña 3 y lo convertimos a DOP si es necesario.
+        const precioVentaUsd = parseFloat(document.getElementById('precio_venta_estimado_usd').value) || 0;
+        const tasaActual = parseFloat(document.getElementById('tasa').value) || 60.60;
+        
+        if (precioVentaUsd > 0) {
+            // Asumimos que los préstamos en RD se simulan mayormente en pesos DOP
+            document.getElementById('p_precio').value = Math.round(precioVentaUsd * tasaActual);
+            showToast('Precio sincronizado a RD$', '📥');
+            calcularPrestamo();
+        } else {
+            showToast('No hay precio de venta en Inversión', '⚠️');
+        }
+    }
+
+    function calcularPrestamo() {
+        const precio = parseFloat(document.getElementById('p_precio').value) || 0;
+        const inicial = parseFloat(document.getElementById('p_inicial').value) || 0;
+        const tasaAnual = parseFloat(document.getElementById('p_tasa').value) || 0;
+        const meses = parseInt(document.getElementById('p_plazo').value) || 0;
+
+        let montoFinanciar = precio - inicial;
+        if (montoFinanciar < 0) montoFinanciar = 0;
+        
+        let cuota = 0;
+
+        if (montoFinanciar > 0 && tasaAnual > 0 && meses > 0) {
+            const tasaMensual = (tasaAnual / 100) / 12;
+            cuota = montoFinanciar * (tasaMensual * Math.pow(1 + tasaMensual, meses)) / (Math.pow(1 + tasaMensual, meses) - 1);
+        } else if (montoFinanciar > 0 && tasaAnual === 0 && meses > 0) {
+            // Evita NaN si la tasa es 0
+            cuota = montoFinanciar / meses;
+        }
+
+        // Mostrar resultados en el DOM (en el panel derecho)
+        document.getElementById('rp_vehiculo').innerText = fmt(precio);
+        document.getElementById('rp_inicial').innerText = "- " + fmt(inicial);
+        document.getElementById('rp_monto').innerText = fmt(montoFinanciar);
+        document.getElementById('rp_tasa').innerText = tasaAnual.toFixed(2) + "%";
+        document.getElementById('rp_plazo').innerText = meses + " Meses";
+        document.getElementById('rp_cuota').innerText = fmt(cuota);
+    }
+
+    // ==========================================
+    // ENVÍOS POR WHATSAPP
+    // ==========================================
     function enviarWhatsApp() {
         if (window.currentVehiculo === "POR ESPECIFICAR" && !document.getElementById('valor').value) { showToast('Faltan datos del vehículo', '⚠️'); return; }
         
@@ -747,7 +897,6 @@
         window.open((/Android|iPhone/i.test(navigator.userAgent)?`https://api.whatsapp.com/send?text=`:`https://web.whatsapp.com/send?text=`) + encodeURIComponent(txt), '_blank');
     }
     
-    // WHATSAPP AL BROKER/INTERNO (REPORTE RENDIMIENTO)
     function enviarWhatsAppCostos() {
         let t = parseFloat(document.getElementById('tasa').value) || 60.60;
         let vehiculo = window.currentVehiculo !== "POR ESPECIFICAR" ? window.currentVehiculo : "Vehículo por Definir";
@@ -794,12 +943,45 @@
         window.open((/Android|iPhone/i.test(navigator.userAgent)?`https://api.whatsapp.com/send?text=`:`https://web.whatsapp.com/send?text=`) + encodeURIComponent(txt), '_blank');
     }
 
+    // NUEVA FUNCIÓN DE WHATSAPP PARA LA SIMULACIÓN DE PRÉSTAMOS
+    function enviarWhatsAppPrestamo() {
+        const precio = parseFloat(document.getElementById('p_precio').value) || 0;
+        const inicial = parseFloat(document.getElementById('p_inicial').value) || 0;
+        const montoFinanciar = precio - inicial > 0 ? precio - inicial : 0;
+        const tasaAnual = parseFloat(document.getElementById('p_tasa').value) || 0;
+        const meses = parseInt(document.getElementById('p_plazo').value) || 0;
+        const cuotaText = document.getElementById('rp_cuota').innerText;
+
+        if (montoFinanciar <= 0) {
+            showToast('Calcula el préstamo primero', '⚠️');
+            return;
+        }
+
+        let txt = `¡Hola${window.currentCliente ? ' ' + window.currentCliente : ''}! 🚗\n\nAquí tienes la simulación de financiamiento vehicular vía *Next GB Auto Import*:\n\n`;
+        
+        if (window.currentVehiculo !== "POR ESPECIFICAR") {
+            txt += `🚘 *Vehículo:* ${window.currentVehiculo}\n\n`;
+        }
+
+        txt += `*Detalles de la Simulación:*\n`;
+        txt += `💵 *Valor del Vehículo:* RD$ ${fmt(precio)}\n`;
+        txt += `📉 *Avance / Inicial:* RD$ ${fmt(inicial)}\n`;
+        txt += `💰 *Monto a Financiar:* RD$ ${fmt(montoFinanciar)}\n\n`;
+
+        txt += `🏦 *Tasa Estimada Anual:* ${tasaAnual.toFixed(2)}%\n`;
+        txt += `⏳ *Plazo:* ${meses} Meses\n\n`;
+
+        txt += `💳 *CUOTA MENSUAL APROXIMADA:* RD$ ${cuotaText}\n\n`;
+
+        txt += `_⚠️ Nota: Esta simulación es referencial y no incluye seguros ni gastos de cierre. Las condiciones finales están sujetas a la evaluación de la entidad financiera._\n\n`;
+        txt += `Quedamos a tu entera disposición.`;
+
+        window.open((/Android|iPhone/i.test(navigator.userAgent)?`https://api.whatsapp.com/send?text=`:`https://web.whatsapp.com/send?text=`) + encodeURIComponent(txt), '_blank');
+    }
+
     window.onload = function() {
         setAuctionPlatform('iaai');
-        
-        // Dispara la descarga desde GitHub automáticamente al cargar la web
         cargarCSVDesdeGitHub(); 
-        
         fetchTasaDolar(); 
         actualizarSelectCotizaciones();
         openTab('tab-subastas'); 
