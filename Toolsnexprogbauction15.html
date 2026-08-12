@@ -248,6 +248,15 @@
             <div class="input-group"><label>Versión / Tracción</label><select id="version" onchange="setAutoPrice()" class="reset-select"><option value="">Seleccione...</option></select></div>
             <div class="input-group"><label>Origen</label><input type="text" id="pais_origen" readonly placeholder="--" style="background-color: transparent; border-color: transparent; font-weight: 800; text-align: center; color: var(--accent);" class="reset-target"></div>
         </div>
+        
+        <!-- NUEVA TARJETA DE ESPECIFICACIONES -->
+        <div id="specs-card" style="display: none; background: rgba(37, 99, 235, 0.05); border: 1px dashed var(--accent); border-radius: var(--radius-input); padding: 15px; margin-top: 5px; margin-bottom: 15px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">📋 Ficha Técnica del Vehículo</div>
+            <div id="specs-content" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <!-- Las especificaciones se inyectan automáticamente aquí -->
+            </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="input-group"><label>Valor Vehículo (USD$)</label><input type="number" id="valor" value="0" oninput="updateSeguroYCalc()" class="reset-target default-zero"></div>
             <div class="input-group"><label>Tasa Cambiaria DOP</label><input type="number" id="tasa" value="60.60" step="0.01" oninput="calc(); calcCostos();" style="border-color: var(--success); color: var(--success); font-weight: 800;"></div>
@@ -571,6 +580,11 @@
         document.querySelectorAll('.reset-select').forEach(select => { select.innerHTML = '<option value="">Seleccione...</option>'; });
         const mSel = document.getElementById('marca'); Object.keys(db).sort().forEach(m => mSel.options.add(new Option(m, m)));
         document.getElementById('tratado').value = "0.10"; document.getElementById('select-cotizaciones').value = "";
+        
+        // Ocultar tarjeta de especificaciones al limpiar el caso
+        const specCard = document.getElementById('specs-card');
+        if (specCard) specCard.style.display = 'none';
+
         window.currentAuctionBid = 0; window.currentAuctionFees = 0; window.currentTotal = 0; window.currentVehiculo = "POR ESPECIFICAR"; window.currentCliente = "";
         calcAuctionFees(); calc(); calcCostos(); calcularPrestamo(); openTab('tab-subastas'); window.scrollTo({ top: 0, behavior: 'smooth' }); showToast('Pantalla limpia.', '🧹');
     }
@@ -724,9 +738,9 @@
     function parseCSVLine(t, d) { let p = []; let q = false; let c = ''; for (let i = 0; i < t.length; i++) { let char = t[i]; if (char === '"') q = !q; else if (char === d && !q) { p.push(c.trim()); c = ''; } else c += char; } p.push(c.trim()); return p; }
 
     // ==========================================
-    // CONEXIÓN DIRECTA A GITHUB
+    // CONEXIÓN DIRECTA A GITHUB (Ruta Relativa)
     // ==========================================
-    const urlGitHubCSV = 'https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/base_datos.csv';
+    const urlGitHubCSV = 'Base%20de%20Datos%20Valores%20Vehiculos%202026%20-%202027.csv';
 
     async function cargarCSVDesdeGitHub() {
         const st = document.getElementById('db-status');
@@ -785,11 +799,39 @@
     function setAutoPrice() {
         const m = document.getElementById('marca').value, mod = document.getElementById('modelo').value, a = document.getElementById('anio').value, idx = document.getElementById('version').value;
         const pInp = document.getElementById('pais_origen'), tSel = document.getElementById('tratado');
+        const specCard = document.getElementById('specs-card'), specContent = document.getElementById('specs-content');
+        
         if (db[m] && db[m][mod] && db[m][mod][a] && idx !== "") {
-            const it = db[m][mod][a][idx]; document.getElementById('valor').value = it.valor; document.getElementById('seguro').value = (it.valor*0.02).toFixed(2);
-            const p = it.pais ? it.pais.toUpperCase().trim() : "--"; pInp.value = p;
-            if (['US','ESTADOS UNIDOS','EEUU','EUROPA'].some(x => p.includes(x))) { tSel.value = "0"; pInp.style.color = "var(--success)"; } else { tSel.value = "0.10"; pInp.style.color = "var(--text-main)"; }
-        } calc();
+            const it = db[m][mod][a][idx]; 
+            document.getElementById('valor').value = it.valor; 
+            document.getElementById('seguro').value = (it.valor * 0.02).toFixed(2);
+            
+            const p = it.pais ? it.pais.toUpperCase().trim() : "--"; 
+            pInp.value = p;
+            
+            if (['US','ESTADOS UNIDOS','EEUU','EUROPA'].some(x => p.includes(x))) { 
+                tSel.value = "0"; 
+                pInp.style.color = "var(--success)"; 
+            } else { 
+                tSel.value = "0.10"; 
+                pInp.style.color = "var(--text-main)"; 
+            }
+            
+            // Renderizado de las Especificaciones Dinámicas
+            const sDec = decodificarEspecificaciones(it.espec);
+            if (Object.keys(sDec).length > 0) {
+                specContent.innerHTML = '';
+                for (const [key, val] of Object.entries(sDec)) {
+                    specContent.innerHTML += `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 6px; font-size: 11px; color: var(--text-main);"><b>${key}:</b> ${val}</span>`;
+                }
+                if (specCard) specCard.style.display = 'block';
+            } else {
+                if (specCard) specCard.style.display = 'none';
+            }
+        } else {
+            if (specCard) specCard.style.display = 'none';
+        } 
+        calc();
     }
 
     function calc() {
